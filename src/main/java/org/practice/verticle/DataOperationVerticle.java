@@ -2,40 +2,33 @@ package org.practice.verticle;
 
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
-import io.vertx.core.Vertx;
-import io.vertx.core.VertxOptions;
-import io.vertx.core.impl.logging.Logger;
-import io.vertx.core.impl.logging.LoggerFactory;
+//import io.vertx.core.impl.logging.Logger;
+//import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.logging.SLF4JLogDelegateFactory;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.BodyHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class DataOperationVerticle extends AbstractVerticle {
     private static final Logger logger = LoggerFactory.getLogger(DataOperationVerticle.class);
-    private Vertx vertx;
+    Map<String, JsonObject> inMemoryData = new HashMap<>();
+    AtomicInteger i = new AtomicInteger(0);
 
-    public void init() {
-        VertxOptions vertxOptions = new VertxOptions()
-                .setWorkerPoolSize(20)
-                .setWarningExceptionTime(20000);
-
-        this.vertx = Vertx.vertx(vertxOptions);
-    }
     @Override
     public void start(Promise<Void> promise) {
-        String logFactory = System.getProperty("org.vertx.logger-delegate-factory-class-name");
-        if (logFactory == null) {
-            System.setProperty("org.vertx.logger-delegate-factory-class-name", SLF4JLogDelegateFactory.class.getName());
-        }
-        this.init();
         logger.info("Vertx Instance started");
         Router router = Router.router(vertx);
         router.route().handler(BodyHandler.create());
 
         router.get("/api/test").handler(this::getData);
+        router.post("/api/post/test").handler(this::postData);
 
         vertx.createHttpServer()
                 .requestHandler(router)
@@ -54,7 +47,16 @@ public class DataOperationVerticle extends AbstractVerticle {
         routingContext.response()
                 .putHeader("personal", "app")
                 .putHeader("content-type", "application/json")
-                .end(Json.encode(new JsonObject().put("name", "Sushant")));
+                .end(Json.encode(inMemoryData));
+    }
+
+    public void postData(RoutingContext routingContext) {
+        logger.info("Post Data");
+        JsonObject request = routingContext.body().asJsonObject();
+        inMemoryData.put("postRequest" + i.getAndIncrement(), request);
+        routingContext.response()
+                .putHeader("content-type", "application/json")
+                .end(Json.encode("Request Successfully posted"));
     }
 
     @Override
