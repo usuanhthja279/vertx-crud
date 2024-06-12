@@ -29,6 +29,7 @@ public class DataOperationVerticle extends AbstractVerticle {
 
         router.get("/api/test").handler(this::getData);
         router.post("/api/post/test").handler(this::postData);
+        router.delete("/api/delete/test").handler(this::deleteData);
 
         vertx.createHttpServer()
                 .requestHandler(router)
@@ -57,6 +58,20 @@ public class DataOperationVerticle extends AbstractVerticle {
         routingContext.response()
                 .putHeader("content-type", "application/json")
                 .end(Json.encode("Request Successfully posted"));
+    }
+
+    public void deleteData(RoutingContext routingContext) {
+        logger.info("Delete Data");
+        String request = routingContext.body().asString();
+        if (inMemoryData.containsKey(request)) {
+            inMemoryData.remove(request);
+            logger.info("Data deleted");
+        } else {
+            logger.warn("Please enter correct Request id to be deleted");
+        }
+        routingContext.response()
+                .putHeader("content-type", "application/text")
+                .end("Data deleted: " + request);
     }
 
     @Override
