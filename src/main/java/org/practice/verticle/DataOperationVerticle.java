@@ -28,7 +28,6 @@ public class DataOperationVerticle extends AbstractVerticle {
         logger.info("Vertx Instance started");
         Router router = Router.router(vertx);
         router.route().handler(BodyHandler.create());
-        router.route().handler(this::checkAuthToken);
         router.route().handler(this::generateCorrelationId);
         router.route().handler(this::loggingInterceptor);
         router.route().handler(this::addCommonHeader);
