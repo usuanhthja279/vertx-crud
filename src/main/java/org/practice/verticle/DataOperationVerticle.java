@@ -11,9 +11,11 @@ import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.BodyHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class DataOperationVerticle extends AbstractVerticle {
@@ -26,6 +28,10 @@ public class DataOperationVerticle extends AbstractVerticle {
         logger.info("Vertx Instance started");
         Router router = Router.router(vertx);
         router.route().handler(BodyHandler.create());
+        router.route().handler(this::checkAuthToken);
+        router.route().handler(this::generateCorrelationId);
+        router.route().handler(this::loggingInterceptor);
+        router.route().handler(this::addCommonHeader);
 
         router.get("/api/test").handler(this::getData);
         router.post("/api/post/test").handler(this::postData);
@@ -45,16 +51,42 @@ public class DataOperationVerticle extends AbstractVerticle {
         logger.info("Verticle Created");
     }
 
-    public void getData(RoutingContext routingContext) {
-        logger.info("Responses");
+    private void checkAuthToken(RoutingContext routingContext) {
+        MDC.clear();
+        String authHeader = routingContext.request().getHeader("Authorization");
+        if (authHeader == null || !authHeader.equals("Bearer SushantToken")) {
+            logger.error("Error: Please Provide Auth Token in Headers");
+            routingContext.response().setStatusCode(401).end("Unauthorized");
+        } else {
+            routingContext.next();
+        }
+    }
+
+    private void generateCorrelationId(RoutingContext context) {
+        String correlationId = UUID.randomUUID().toString();
+        context.put("correlationId", correlationId);
+        context.next();
+    }
+
+    private void loggingInterceptor(RoutingContext routingContext) {
+        MDC.put("correlationID", routingContext.get("correlationId"));
+        routingContext.next();
+    }
+
+    private void addCommonHeader(RoutingContext routingContext) {
+        routingContext.response().putHeader("personal-correlation-id", MDC.get("correlationID"));
+        routingContext.next();
+    }
+
+    private void getData(RoutingContext routingContext) {
+        logger.info("GET Responses: {}", inMemoryData);
         routingContext.response()
-                .putHeader("personal", "app")
                 .putHeader("content-type", "application/json")
                 .end(Json.encode(inMemoryData));
     }
 
-    public void postData(RoutingContext routingContext) {
-        logger.info("Post Data");
+    private void postData(RoutingContext routingContext) {
+        logger.info("POST Data");
         JsonObject request = routingContext.body().asJsonObject();
         inMemoryData.put("postRequest" + i.getAndIncrement(), request);
         routingContext.response()
@@ -62,8 +94,8 @@ public class DataOperationVerticle extends AbstractVerticle {
                 .end(Json.encode("Request Successfully posted"));
     }
 
-    public void deleteData(RoutingContext routingContext) {
-        logger.info("Delete Data");
+    private void deleteData(RoutingContext routingContext) {
+        logger.info("DELETE Data");
         String request = routingContext.body().asString();
         if (inMemoryData.containsKey(request)) {
             inMemoryData.remove(request);
