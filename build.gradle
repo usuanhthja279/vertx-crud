@@ -5,8 +5,6 @@ plugins {
 group 'org.practice'
 version '1.0-SNAPSHOT'
 
-sourceCompatibility = 17
-
 repositories {
     mavenCentral()
 }
@@ -38,6 +36,9 @@ jar {
 }
 test {
     useJUnitPlatform()
+}
+tasks.withType(JavaCompile) {
+    options.release = 17
 }
 
 task stage {
