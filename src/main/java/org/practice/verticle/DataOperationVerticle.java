@@ -31,9 +31,11 @@ public class DataOperationVerticle extends AbstractVerticle {
         router.post("/api/post/test").handler(this::postData);
         router.delete("/api/delete/test").handler(this::deleteData);
 
+        int port = Integer.parseInt(System.getenv().getOrDefault("PORT", "8080"));
+        logger.info("System running on PORT: {}", port);
         vertx.createHttpServer()
                 .requestHandler(router)
-                .listen(8080, result -> {
+                .listen(port, result -> {
                     if (result.succeeded()) {
                         promise.complete();
                     } else {
