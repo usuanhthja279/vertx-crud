@@ -5,6 +5,8 @@ plugins {
 group 'org.practice'
 version '1.0-SNAPSHOT'
 
+sourceCompatibility = 17
+
 repositories {
     mavenCentral()
 }
@@ -23,6 +25,21 @@ dependencies {
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
 }
 
+jar {
+    manifest {
+        attributes 'Main-class': 'org.practice.Main'
+    }
+    from {
+        configurations.runtimeClasspath.collect {
+            it.isDirectory() ? it : zipTree(it)
+        }
+    }
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
 test {
     useJUnitPlatform()
+}
+
+task stage {
+    dependsOn build
 }
