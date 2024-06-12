@@ -40,9 +40,6 @@ jar {
 test {
     useJUnitPlatform()
 }
-tasks.withType(JavaCompile) {
-    options.release = 17
-}
 
 task stage {
     dependsOn build
