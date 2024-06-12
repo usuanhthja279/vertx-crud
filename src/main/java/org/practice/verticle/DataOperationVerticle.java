@@ -33,7 +33,7 @@ public class DataOperationVerticle extends AbstractVerticle {
 
         vertx.createHttpServer()
                 .requestHandler(router)
-                .listen(8990, result -> {
+                .listen(8080, result -> {
                     if (result.succeeded()) {
                         promise.complete();
                     } else {
